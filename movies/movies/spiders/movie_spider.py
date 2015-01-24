@@ -5,22 +5,26 @@ class IPSpider(Spider):
     name, start_urls = 'ip_spider', ['http://iranproud.com/movies']
 
 
-    def parse_channel(self, response):
-        hxs = Selector(response)
-        item = response.meta['record']
-        item['video_url'] = hxs.xpath("body//div[@id='divVideoHolder']/@videosrc").extract()[0]
-        # item["title"] = hxs.xpath("body//div[@id='divTitrGrid']/text()").extract()[0]
-
-        return item
-
     def parse(self, response):
         hxs = Selector(response)
 
-        for record in hxs.xpath("//body//a"):
+        for video in hxs.xpath("body//div[@id='divVideoHolder']/@videosrc").extract():
             item = Channel()
-            page_url= "http://iranproud.com%s" % record.xpath('@href').extract()[0]
+            item['video_url'] = video
+            item['title'] = hxs.xpath("body//div[@id='divTitrGrid']/text()").extract()
+            yield item
+
+
+        for record in hxs.xpath("//body//a"):
+            extracted = record.xpath('@href').extract()
+            if len(extracted) == 0 or "/movies/" not in extracted[0]:
+                continue
+
+            item = Channel()
+            page_url= "http://iranproud.com%s" % extracted[0] if extracted[0].startswith('/') else extracted[0]
             # item["img_url"] = record.xpath('img/@src').extract()[0]
 
-            request = Request(page_url, callback=self.parse_channel)
+            request = Request(page_url, callback=self.parse)
             request.meta['record'] = item
             yield request
+

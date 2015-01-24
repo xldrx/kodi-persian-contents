@@ -9,3 +9,4 @@ from scrapy import Item, Field
 
 class Channel(Item):
     video_url = Field()
+    title = Field()
